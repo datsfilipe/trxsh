@@ -138,38 +138,18 @@ func (c *CLI) Cleanup() error {
 		return err
 	}
 
-	trashDirs := []string{filepath.Join(home, ".trash")}
-
-	possibleMounts := []string{
-		"/media/",
-		"/run/media/",
-		"/mnt/",
-		"/Volumes/",
-	}
-
-	for _, mountPrefix := range possibleMounts {
-		entries, err := os.ReadDir(mountPrefix)
-		if err == nil {
-			for _, entry := range entries {
-				if entry.IsDir() {
-					mountPath := filepath.Join(mountPrefix, entry.Name())
-					trashPath := filepath.Join(mountPath, ".trash")
-					if _, err := os.Stat(trashPath); err == nil {
-						trashDirs = append(trashDirs, trashPath)
-					}
-				}
-			}
+	trashDir := filepath.Join(home, ".Trash")
+	if stat, err := os.Stat(trashDir); err == nil && stat.IsDir() {
+		if err := os.RemoveAll(trashDir); err != nil {
+			return fmt.Errorf("failed to remove trash directory %q: %w", trashDir, err)
 		}
 	}
 
-	for _, dir := range trashDirs {
-		if _, err := os.Stat(dir); err == nil {
-			if err := os.RemoveAll(dir); err != nil {
-				return err
-			}
-		}
+	newReg, err := register.New("")
+	if err != nil {
+		return err
 	}
 
-	c.reg = &register.Register{}
+	c.reg = newReg
 	return c.reg.Save()
 }

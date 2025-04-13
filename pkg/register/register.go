@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -155,39 +154,5 @@ func GetTrashRoot(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	absPath, err := filepath.Abs(filePath)
-	if err != nil {
-		return "", err
-	}
-
-	isMounted := false
-	for _, prefix := range []string{
-		"/media/",
-		"/run/media/",
-		"/mnt/",
-		"/Volumes/",
-	} {
-		if strings.HasPrefix(absPath, prefix) {
-			isMounted = true
-			break
-		}
-	}
-
-	if isMounted {
-		cmd := exec.Command("df", "-P", absPath)
-		output, err := cmd.Output()
-		if err == nil {
-			lines := strings.Split(string(output), "\n")
-			if len(lines) >= 2 {
-				fields := strings.Fields(lines[1])
-				if len(fields) >= 6 {
-					mountPoint := fields[5]
-					return filepath.Join(mountPoint, DefaultPath), nil
-				}
-			}
-		}
-	}
-
 	return filepath.Join(home, DefaultPath), nil
 }
