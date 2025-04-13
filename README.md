@@ -5,7 +5,7 @@ Trxsh is a simple and efficient command-line trash manager written in Go. It all
 ### Features
 
 - deletion: move files to a designated trash directory instead of permanently deleting them.​
-- list Contents: biew all files currently in the trash.​
+- list: biew all files currently in the trash.​
 - restore: recover files from the trash by ID or using an interactive fzf interface.​
 - cleanup: permanently delete all files in the trash.​
 
