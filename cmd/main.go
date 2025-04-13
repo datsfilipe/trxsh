@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/datsfilipe/trash-cli/pkg/cli"
-	"github.com/datsfilipe/trash-cli/pkg/integrations"
-	"github.com/datsfilipe/trash-cli/pkg/register"
+	"github.com/datsfilipe/trxsh/pkg/cli"
+	"github.com/datsfilipe/trxsh/pkg/integrations"
+	"github.com/datsfilipe/trxsh/pkg/register"
 )
 
 func printUsage() {

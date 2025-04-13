@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/datsfilipe/trash-cli/pkg/register"
+	"github.com/datsfilipe/trxsh/pkg/register"
 )
 
 type CLI struct {

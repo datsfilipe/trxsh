@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/datsfilipe/trash-cli/pkg/register"
+	"github.com/datsfilipe/trxsh/pkg/register"
 )
 
 type FzfIntegration struct {

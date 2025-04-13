@@ -1,3 +1,3 @@
-module github.com/datsfilipe/trash-cli
+module github.com/datsfilipe/trxsh
 
 go 1.22.3
