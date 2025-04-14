@@ -1,5 +1,7 @@
 # Trxsh
 
+[![build](https://github.com/datsfilipe/trxsh/actions/workflows/build.yml/badge.svg)](https://github.com/datsfilipe/trxsh/actions/workflows/build.yml)
+
 Trxsh is a simple and efficient command-line trash manager written in Go. It allows you to safely delete, list, restore, and permanently remove files from your system's trash directory.
 
 ### Features
