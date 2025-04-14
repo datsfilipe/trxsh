@@ -27,6 +27,5 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         goversion: "https://dl.google.com/go/go1.22.3.linux-amd64.tar.gz"
-        project_path: "./cmd/main.go"
-        binary_name: "trxsh"
+        project_path: "./cmd/"
         extra_files: LICENSE README.md
