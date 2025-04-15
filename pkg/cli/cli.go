@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -66,7 +67,7 @@ func (c *CLI) Trash(args []string) error {
 			return err
 		}
 
-		if err := os.Rename(file, trashPath); err != nil {
+		if err = moveFile(file, trashPath); err != nil {
 			return err
 		}
 
@@ -125,7 +126,7 @@ func (c *CLI) Restore(idStr string) error {
 		return err
 	}
 
-	if err := os.Rename(trashPath, record.Path); err != nil {
+	if err = moveFile(trashPath, record.Path); err != nil {
 		return err
 	}
 	if err := c.DeleteTrashInfo(record.ID, encodedName); err != nil {
@@ -340,4 +341,44 @@ func (c *CLI) DeleteDirSize() {
 	if _, err := os.Stat(dirSizePath); err == nil {
 		os.Remove(dirSizePath)
 	}
+}
+
+func moveFile(src, dst string) error {
+	err := os.Rename(src, dst)
+	if err == nil {
+		return nil
+	}
+
+	if le, ok := err.(*os.LinkError); ok && strings.Contains(le.Err.Error(), "cross-device") {
+		if err = copyFile(src, dst); err != nil {
+			return err
+		}
+		return os.Remove(src)
+	}
+
+	return err
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
+
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(dst, info.Mode())
 }
