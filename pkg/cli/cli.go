@@ -78,6 +78,10 @@ func (c *CLI) Trash(args []string) error {
 	return c.reg.Save()
 }
 
+func (c *CLI) RawList() []register.Record {
+	return c.reg.List()
+}
+
 func (c *CLI) List() error {
 	records := c.reg.List()
 

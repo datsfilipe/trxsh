@@ -6,7 +6,6 @@ import (
 
 	"github.com/datsfilipe/trxsh/pkg/cli"
 	"github.com/datsfilipe/trxsh/pkg/integrations"
-	"github.com/datsfilipe/trxsh/pkg/register"
 )
 
 func printUsage() {
@@ -34,17 +33,12 @@ func main() {
 
 	switch os.Args[1] {
 	case "--fzf", "-f":
-		reg, err := register.New("")
+		fzf, err := integrations.NewFzf()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		if err := reg.Load(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
 
-		fzf := integrations.NewFzf(reg)
 		if err := fzf.RestoreWithFzf(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
