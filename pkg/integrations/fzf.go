@@ -73,25 +73,28 @@ func (f *FzfIntegration) restoreFile(id int) error {
 	if err != nil {
 		return err
 	}
-	trashRoot, err := register.GetTrashRoot(record.Path)
-	if err != nil {
-		return err
-	}
+
+	trashRoot := register.GetTrashRoot()
 	encodedName, err := register.EncodePath(record.Path)
 	if err != nil {
 		return err
 	}
+
 	trashPath := filepath.Join(trashRoot, encodedName)
 	targetDir := filepath.Dir(record.Path)
+
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return err
 	}
+
 	if err := os.Rename(trashPath, record.Path); err != nil {
 		return err
 	}
+
 	if err := f.reg.Remove(id); err != nil {
 		return err
 	}
+
 	fmt.Printf("Restored to: %s\n", record.Path)
 	return f.reg.Save()
 }

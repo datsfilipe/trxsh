@@ -1,19 +1,48 @@
 package register
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 )
 
+type DirSize struct {
+	FolderName string
+	Size       int64
+	Seen       bool
+	MTime      int64
+}
+
 const (
-	Filename    = "trash.registry.json"
-	DefaultPath = ".Trash"
+	Filename         = "trash.registry.json"
+	DefaultPath      = "Trash/files"
+	DefaultInfoPath  = "Trash/info"
+	DefaultTrashPath = "Trash"
 )
+
+func GetUserHomeDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic("Error: $HOME env variable is not set")
+	}
+	return home
+}
+
+func GetDataHome() string {
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if xdgDataHome != "" {
+		return xdgDataHome
+	}
+
+	return GetUserHomeDir() + "/.local/share"
+}
 
 type Register struct {
 	path    string
@@ -22,23 +51,15 @@ type Register struct {
 
 func New(path string) (*Register, error) {
 	if path == "" {
-		path = DefaultPath
+		path = filepath.Join(GetDataHome(), DefaultTrashPath)
 	}
 
 	if strings.HasPrefix(path, "~") {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		path = filepath.Join(home, path[1:])
+		path = filepath.Join(GetUserHomeDir(), path[1:])
 	}
 
 	if !filepath.IsAbs(path) {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		path = filepath.Join(home, path)
+		path = filepath.Join(GetUserHomeDir(), path)
 	}
 
 	return &Register{
@@ -88,7 +109,12 @@ func (r *Register) Add(name, path string) (Record, error) {
 		ID:   r.NewID(),
 		Name: name,
 		Path: path,
+		Info: RecordInfo{
+			Path:      path,
+			DeletedAt: time.Now().Format("2006-01-02"),
+		},
 	}
+
 	r.records = append(r.records, record)
 	return record, nil
 }
@@ -149,10 +175,79 @@ func DecodePath(encodedFile string) (string, error) {
 	return filepath.Join(string(dirPathBytes), baseName), nil
 }
 
-func GetTrashRoot(filePath string) (string, error) {
-	home, err := os.UserHomeDir()
+func (r *Register) GetInfoContent(ID int) (string, error) {
+	record, err := r.Get(ID)
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, DefaultPath), nil
+
+	t, err := time.Parse("2006-01-02", record.Info.DeletedAt)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("[Trash Info]\nPath=%s\nDeletionDate=%s\n", record.Path, t.Format("20040831T15:04:05")), nil
+}
+
+func (r *Register) GetDirSizeContent(path string, size int64) string {
+	return fmt.Sprintf("%d %s\n", size, filepath.Base(path))
+}
+
+func (r *Register) GetDirSizes() ([]DirSize, error) {
+	dirSizePath := filepath.Join(GetDirSizeRoot(), "directorysizes")
+	if _, err := os.Stat(dirSizePath); os.IsNotExist(err) {
+		return []DirSize{}, nil
+	}
+
+	file, err := os.Open(dirSizePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var dirSizes []DirSize
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.SplitN(line, " ", 3)
+		if len(parts) != 3 {
+			continue
+		}
+
+		size, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		mtime, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		name := parts[2]
+		dirSizes = append(dirSizes, DirSize{
+			FolderName: name,
+			Size:       size,
+			MTime:      mtime,
+			Seen:       true,
+		})
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return dirSizes, nil
+}
+
+func GetTrashRoot() string {
+	return filepath.Join(GetDataHome(), DefaultPath)
+}
+
+func GetTrashInfoRoot() string {
+	return filepath.Join(GetDataHome(), DefaultInfoPath)
+}
+
+func GetDirSizeRoot() string {
+	return filepath.Join(GetDataHome(), DefaultTrashPath)
 }

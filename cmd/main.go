@@ -16,6 +16,7 @@ func printUsage() {
 	fmt.Println("  --list, -l       : List files in trash")
 	fmt.Println("  --restore, -r ID : Restore file by ID")
 	fmt.Println("  --cleanup, -c    : Empty all trash directories")
+	fmt.Println("  --dir-sizes, -s    : Show directory sizes")
 	fmt.Println("  --help, -h       : Show this help")
 }
 
@@ -61,6 +62,13 @@ func main() {
 			os.Exit(1)
 		}
 		if err := c.Restore(os.Args[2]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "--dir-sizes", "-s":
+		err := c.PrintDirSizes()
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
