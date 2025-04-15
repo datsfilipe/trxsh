@@ -57,7 +57,7 @@ func (c *CLI) Trash(args []string) error {
 			return err
 		}
 
-		record, err := c.reg.Add(filepath.Base(file), absPath)
+		record, err := c.reg.Add(filepath.Base(file), encodedName, absPath)
 		if err != nil {
 			return err
 		}
@@ -114,12 +114,7 @@ func (c *CLI) Restore(idStr string) error {
 	}
 
 	trashRoot := register.GetTrashRoot()
-	encodedName, err := register.EncodePath(record.Path)
-	if err != nil {
-		return err
-	}
-
-	trashPath := filepath.Join(trashRoot, encodedName)
+	trashPath := filepath.Join(trashRoot, record.EncodedPath)
 
 	targetDir := filepath.Dir(record.Path)
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
@@ -129,7 +124,7 @@ func (c *CLI) Restore(idStr string) error {
 	if err = moveFile(trashPath, record.Path); err != nil {
 		return err
 	}
-	if err := c.DeleteTrashInfo(record.ID, encodedName); err != nil {
+	if err := c.DeleteTrashInfo(record.ID, record.EncodedPath); err != nil {
 		return err
 	}
 

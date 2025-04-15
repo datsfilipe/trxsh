@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -104,11 +105,12 @@ func (r *Register) NewID() int {
 	return last.ID + 1
 }
 
-func (r *Register) Add(name, path string) (Record, error) {
+func (r *Register) Add(name, encodedPath, path string) (Record, error) {
 	record := Record{
-		ID:   r.NewID(),
-		Name: name,
-		Path: path,
+		ID:          r.NewID(),
+		Name:        name,
+		Path:        path,
+		EncodedPath: encodedPath,
 		Info: RecordInfo{
 			Path:      path,
 			DeletedAt: time.Now().Format("2006-01-02"),
@@ -147,32 +149,16 @@ func EncodePath(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	baseName := filepath.Base(absPath)
 	dirPath := filepath.Dir(absPath)
-
 	encodedDir := base64.StdEncoding.EncodeToString([]byte(dirPath))
 
-	return fmt.Sprintf("%s__%s#0", baseName, encodedDir), nil
-}
-
-func DecodePath(encodedFile string) (string, error) {
-	encodedFile = strings.Split(encodedFile, "#")[0]
-
-	parts := strings.SplitN(encodedFile, "__", 2)
-	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid encoded file format: %s", encodedFile)
-	}
-
-	baseName := parts[0]
-	encodedPath := parts[1]
-
-	dirPathBytes, err := base64.StdEncoding.DecodeString(encodedPath)
+	ts, err := getFileCreationTime(filePath)
 	if err != nil {
-		return "", err
+		ts = time.Now()
 	}
 
-	return filepath.Join(string(dirPathBytes), baseName), nil
+	return fmt.Sprintf("%s__%s__%d#0", baseName, encodedDir, ts.UnixNano()), nil
 }
 
 func (r *Register) GetInfoContent(ID int) (string, error) {
@@ -250,4 +236,16 @@ func GetTrashInfoRoot() string {
 
 func GetDirSizeRoot() string {
 	return filepath.Join(GetDataHome(), DefaultTrashPath)
+}
+
+func getFileCreationTime(filePath string) (time.Time, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return time.Time{}, err
+	}
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if ok {
+		return time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec)), nil
+	}
+	return info.ModTime(), nil
 }
