@@ -1,9 +1,15 @@
 package register
 
+type RecordInfo struct {
+	Path      string `json:"path"`
+	DeletedAt string `json:"deleted_at"`
+}
+
 type Record struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-	Path string `json:"path"`
+	ID   int        `json:"id"`
+	Name string     `json:"name"`
+	Path string     `json:"path"`
+	Info RecordInfo `json:"info"`
 }
 
 func (r *Record) String() string {

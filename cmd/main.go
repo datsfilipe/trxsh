@@ -3,20 +3,24 @@ package main
 import (
 	"fmt"
 	"os"
+	"text/tabwriter"
 
 	"github.com/datsfilipe/trxsh/pkg/cli"
 	"github.com/datsfilipe/trxsh/pkg/integrations"
-	"github.com/datsfilipe/trxsh/pkg/register"
 )
 
 func printUsage() {
 	fmt.Printf("Usage: %s [OPTIONS] [FILES]\n", os.Args[0])
 	fmt.Println("Options:")
-	fmt.Println("  --fzf, -f       : Restore files using fzf")
-	fmt.Println("  --list, -l       : List files in trash")
-	fmt.Println("  --restore, -r ID : Restore file by ID")
-	fmt.Println("  --cleanup, -c    : Empty all trash directories")
-	fmt.Println("  --help, -h       : Show this help")
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Fprintln(w, "  --fzf, -f\t: Restore files using fzf")
+	fmt.Fprintln(w, "  --list, -l\t: List files in trash")
+	fmt.Fprintln(w, "  --restore, -r ID\t: Restore file by ID")
+	fmt.Fprintln(w, "  --cleanup, -c\t: Empty all trash directories")
+	fmt.Fprintln(w, "  --dir-sizes, -s\t: Show directory sizes")
+	fmt.Fprintln(w, "  --help, -h\t: Show this help")
+	w.Flush()
 }
 
 func main() {
@@ -33,17 +37,12 @@ func main() {
 
 	switch os.Args[1] {
 	case "--fzf", "-f":
-		reg, err := register.New("")
+		fzf, err := integrations.NewFzf()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		if err := reg.Load(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
 
-		fzf := integrations.NewFzf(reg)
 		if err := fzf.RestoreWithFzf(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -61,6 +60,13 @@ func main() {
 			os.Exit(1)
 		}
 		if err := c.Restore(os.Args[2]); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "--dir-sizes", "-s":
+		err := c.PrintDirSizes()
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
