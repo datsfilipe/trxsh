@@ -147,17 +147,20 @@ func (c *CLI) Restore(idStr string) error {
 }
 
 func (c *CLI) Cleanup() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	trashDir := filepath.Join(home, ".Trash")
+	trashDir := register.GetTrashRoot()
 	if stat, err := os.Stat(trashDir); err == nil && stat.IsDir() {
 		if err := os.RemoveAll(trashDir); err != nil {
 			return fmt.Errorf("failed to remove trash directory %q: %w", trashDir, err)
 		}
 	}
+
+	infoDir := register.GetTrashInfoRoot()
+	if stat, err := os.Stat(infoDir); err == nil && stat.IsDir() {
+		if err := os.RemoveAll(infoDir); err != nil {
+			return fmt.Errorf("failed to remove trash info directory %q: %w", infoDir, err)
+		}
+	}
+	c.DeleteDirSize()
 
 	newReg, err := register.New("")
 	if err != nil {
