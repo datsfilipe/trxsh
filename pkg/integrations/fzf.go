@@ -30,7 +30,8 @@ func (f *FzfIntegration) RestoreWithFzf() error {
 
 	records := f.cli.RawList()
 	if len(records) == 0 {
-		return fmt.Errorf("no files in trash")
+		fmt.Println("No files in trash")
+		return nil
 	}
 
 	tmpfile, err := os.CreateTemp("", "trash-fzf-")
