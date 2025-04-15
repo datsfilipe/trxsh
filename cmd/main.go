@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"text/tabwriter"
 
 	"github.com/datsfilipe/trxsh/pkg/cli"
 	"github.com/datsfilipe/trxsh/pkg/integrations"
@@ -11,12 +12,15 @@ import (
 func printUsage() {
 	fmt.Printf("Usage: %s [OPTIONS] [FILES]\n", os.Args[0])
 	fmt.Println("Options:")
-	fmt.Println("  --fzf, -f       : Restore files using fzf")
-	fmt.Println("  --list, -l       : List files in trash")
-	fmt.Println("  --restore, -r ID : Restore file by ID")
-	fmt.Println("  --cleanup, -c    : Empty all trash directories")
-	fmt.Println("  --dir-sizes, -s    : Show directory sizes")
-	fmt.Println("  --help, -h       : Show this help")
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Fprintln(w, "  --fzf, -f\t: Restore files using fzf")
+	fmt.Fprintln(w, "  --list, -l\t: List files in trash")
+	fmt.Fprintln(w, "  --restore, -r ID\t: Restore file by ID")
+	fmt.Fprintln(w, "  --cleanup, -c\t: Empty all trash directories")
+	fmt.Fprintln(w, "  --dir-sizes, -s\t: Show directory sizes")
+	fmt.Fprintln(w, "  --help, -h\t: Show this help")
+	w.Flush()
 }
 
 func main() {
