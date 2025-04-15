@@ -10,7 +10,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -242,10 +241,6 @@ func getFileCreationTime(filePath string) (time.Time, error) {
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return time.Time{}, err
-	}
-	stat, ok := info.Sys().(*syscall.Stat_t)
-	if ok {
-		return time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec)), nil
 	}
 	return info.ModTime(), nil
 }
