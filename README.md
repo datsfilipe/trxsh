@@ -15,13 +15,13 @@ Trxsh is a simple and efficient command-line trash manager written in Go. It all
 
 ```bash
 Usage: ./dist/trxsh [OPTIONS] [FILES]
-
 Options:
-  --fzf, -f         : Restore files using fzf
-  --list, -l        : List files in trash
-  --restore, -r ID  : Restore file by ID
-  --cleanup, -c     : Empty all trash directories
-  --help, -h        : Show this help
+  --fzf, -f        : Restore files using fzf
+  --list, -l       : List files in trash
+  --restore, -r ID : Restore file by ID
+  --cleanup, -c    : Empty all trash directories
+  --dir-sizes, -s  : Show directory sizes
+  --help, -h       : Show this help
 ```
 
 ### Trash Specification
