@@ -6,10 +6,11 @@ type RecordInfo struct {
 }
 
 type Record struct {
-	ID   int        `json:"id"`
-	Name string     `json:"name"`
-	Path string     `json:"path"`
-	Info RecordInfo `json:"info"`
+	ID          int        `json:"id"`
+	Name        string     `json:"name"`
+	Path        string     `json:"path"`
+	EncodedPath string     `json:"encoded_path"`
+	Info        RecordInfo `json:"info"`
 }
 
 func (r *Record) String() string {
