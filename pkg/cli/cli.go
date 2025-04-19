@@ -348,13 +348,52 @@ func moveFile(src, dst string) error {
 	}
 
 	if le, ok := err.(*os.LinkError); ok && strings.Contains(le.Err.Error(), "cross-device") {
-		if err = copyFile(src, dst); err != nil {
+		if err = copyFileOrDir(src, dst); err != nil {
 			return err
 		}
-		return os.Remove(src)
+		return os.RemoveAll(src)
 	}
 
 	return err
+}
+
+func copyFileOrDir(src, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if srcInfo.IsDir() {
+		return copyDir(src, dst)
+	}
+	return copyFile(src, dst)
+}
+
+func copyDir(src, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if err = os.MkdirAll(dst, srcInfo.Mode()); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if err = copyFileOrDir(srcPath, dstPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func copyFile(src, dst string) error {
