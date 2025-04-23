@@ -31,7 +31,7 @@ cd yay
 makepkg -si
 ```
 
-- NixOs
+- NixOS:
 
 For now you can add a custom derivation to your NixOS config, like so:
 
