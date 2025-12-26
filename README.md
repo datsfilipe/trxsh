@@ -33,44 +33,7 @@ makepkg -si
 
 - NixOS:
 
-For now you can add a custom derivation to your NixOS config, like so:
-
-```nix
-{
-  stdenv,
-  lib,
-  fetchurl,
-}: let
-  source = builtins.fromJSON (builtins.readFile ./conf/source.json);
-in
-  stdenv.mkDerivation rec {
-    pname = "trxsh";
-    version = source.version;
-
-    src = fetchurl {
-      url = "https://github.com/datsfilipe/trxsh/releases/download/${version}/trxsh-${version}-linux-amd64.tar.gz";
-      sha256 = source.sha256;
-    };
-
-    installPhase = ''
-      mkdir -p $out/bin
-      tar -xzf $src -C $out/bin
-      chmod +x $out/bin/trxsh
-    '';
-
-    meta = with lib; {
-      description = "trxsh is a terminal-based trash manager";
-      homepage = "https://github.com/datsfilipe/trxsh";
-      license = licenses.mit;
-      platforms = ["x86_64-linux"];
-    };
-
-    unpackPhase = ":";
-    dontStrip = true;
-  }
-```
-
-In future I'll try adding it to `nixpkgs`.
+For now you can add a custom derivation to your NixOS config. Please refer to [derivation example](./examples/derivation.nix).
 
 ### Features
 
@@ -82,12 +45,12 @@ In future I'll try adding it to `nixpkgs`.
 ### Usage
 
 ```bash
-Usage: ./dist/trxsh [OPTIONS] [FILES]
+Usage: trxsh [OPTIONS] [FILES]
 Options:
   --fzf, -f        : Restore files using fzf
   --list, -l       : List files in trash
   --restore, -r ID : Restore file by ID
-  --cleanup, -c    : Empty all trash directories
+  --cleanup, -c    : Empty trash (use --days N to keep recent files)
   --dir-sizes, -s  : Show directory sizes
   --help, -h       : Show this help
 ```
