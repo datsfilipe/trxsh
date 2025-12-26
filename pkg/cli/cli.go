@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+    "time"
 
 	"github.com/datsfilipe/trxsh/pkg/register"
 )
@@ -141,28 +142,69 @@ func (c *CLI) Restore(idStr string) error {
 	return c.reg.Save()
 }
 
-func (c *CLI) Cleanup() error {
+func (c *CLI) Cleanup(days int) error {
 	trashDir := register.GetTrashRoot()
-	if stat, err := os.Stat(trashDir); err == nil && stat.IsDir() {
-		if err := os.RemoveAll(trashDir); err != nil {
-			return fmt.Errorf("failed to remove trash directory %q: %w", trashDir, err)
-		}
-	}
-
 	infoDir := register.GetTrashInfoRoot()
-	if stat, err := os.Stat(infoDir); err == nil && stat.IsDir() {
-		if err := os.RemoveAll(infoDir); err != nil {
-			return fmt.Errorf("failed to remove trash info directory %q: %w", infoDir, err)
+
+	if days == 0 {
+		if stat, err := os.Stat(trashDir); err == nil && stat.IsDir() {
+			if err := os.RemoveAll(trashDir); err != nil {
+				return fmt.Errorf("failed to remove trash directory %q: %w", trashDir, err)
+			}
+		}
+
+		if stat, err := os.Stat(infoDir); err == nil && stat.IsDir() {
+			if err := os.RemoveAll(infoDir); err != nil {
+				return fmt.Errorf("failed to remove trash info directory %q: %w", infoDir, err)
+			}
+		}
+		c.DeleteDirSize()
+
+		newReg, err := register.New("")
+		if err != nil {
+			return err
+		}
+
+		c.reg = newReg
+		return c.reg.Save()
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -days)
+	records := c.reg.List()
+	
+	var idsToRemove []int
+
+	for _, record := range records {
+		deletedTime, err := time.Parse("2006-01-02", record.Info.DeletedAt)
+		if err != nil {
+			continue
+		}
+
+		if deletedTime.Before(cutoff) {
+			fullPath := filepath.Join(trashDir, record.EncodedPath)
+			if err := os.RemoveAll(fullPath); err != nil && !os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "Failed to remove %s: %v\n", record.Name, err)
+				continue 
+			}
+
+			if err := c.DeleteTrashInfo(record.ID, record.EncodedPath); err != nil && !os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "Failed to remove info for %s: %v\n", record.Name, err)
+			}
+
+			idsToRemove = append(idsToRemove, record.ID)
 		}
 	}
-	c.DeleteDirSize()
 
-	newReg, err := register.New("")
-	if err != nil {
-		return err
+	for _, id := range idsToRemove {
+		if err := c.reg.Remove(id); err != nil {
+			return err
+		}
 	}
 
-	c.reg = newReg
+	if err := c.CalcDirSize(trashDir); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not recalc dir sizes: %v\n", err)
+	}
+
 	return c.reg.Save()
 }
 
@@ -250,7 +292,7 @@ func (c *CLI) CalcDirSize(path string) error {
 			var folderName string
 			lines := strings.Split(string(content), "\n")
 			for _, line := range lines {
-				if strings.HasPrefix(line, "Path=") {
+                if _, ok := strings.CutPrefix(line, "Path="); ok {
 					retrievedPath := strings.TrimPrefix(line, "Path=")
 					retrievedPath = strings.TrimSpace(retrievedPath)
 					folderName = filepath.Base(retrievedPath)

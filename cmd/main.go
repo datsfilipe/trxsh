@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/datsfilipe/trxsh/pkg/cli"
@@ -17,7 +18,7 @@ func printUsage() {
 	fmt.Fprintln(w, "  --fzf, -f\t: Restore files using fzf")
 	fmt.Fprintln(w, "  --list, -l\t: List files in trash")
 	fmt.Fprintln(w, "  --restore, -r ID\t: Restore file by ID")
-	fmt.Fprintln(w, "  --cleanup, -c\t: Empty all trash directories")
+	fmt.Fprintln(w, "  --cleanup, -c\t: Empty trash (use --days N to keep recent files)")
 	fmt.Fprintln(w, "  --dir-sizes, -s\t: Show directory sizes")
 	fmt.Fprintln(w, "  --help, -h\t: Show this help")
 	w.Flush()
@@ -72,11 +73,30 @@ func main() {
 		}
 
 	case "--cleanup", "-c":
-		if err := c.Cleanup(); err != nil {
+		days := 0
+		if len(os.Args) > 2 {
+			if os.Args[2] == "--days" && len(os.Args) > 3 {
+				d, err := strconv.Atoi(os.Args[3])
+				if err == nil {
+					days = d
+				}
+			} else {
+				d, err := strconv.Atoi(os.Args[2])
+				if err == nil {
+					days = d
+				}
+			}
+		}
+
+		if err := c.Cleanup(days); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Trash emptied")
+		if days > 0 {
+			fmt.Printf("Trash cleaned (kept files newer than %d days)\n", days)
+		} else {
+			fmt.Println("Trash fully emptied")
+		}
 
 	case "--help", "-h":
 		printUsage()
