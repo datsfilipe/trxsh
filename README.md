@@ -40,7 +40,7 @@ For now you can add a custom derivation to your NixOS config. Please refer to [d
 - deletion: move files to a designated trash directory instead of permanently deleting them.​
 - list: biew all files currently in the trash.​
 - restore: recover files from the trash by ID or using an interactive fzf interface.​
-- cleanup: permanently delete all files in the trash.​
+- cleanup: permanently delete files in the trash (use --days N to keep recent files).​
 
 ### Usage
 
