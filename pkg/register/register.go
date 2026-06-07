@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -20,12 +21,20 @@ type DirSize struct {
 	MTime      int64
 }
 
-const (
+var (
 	Filename         = "trash.registry.json"
 	DefaultPath      = "Trash/files"
 	DefaultInfoPath  = "Trash/info"
 	DefaultTrashPath = "Trash"
 )
+
+func init() {
+	if runtime.GOOS == "darwin" {
+		DefaultPath = ".Trash/files"
+		DefaultInfoPath = ".Trash/info"
+		DefaultTrashPath = ".Trash"
+	}
+}
 
 func GetUserHomeDir() string {
 	home, err := os.UserHomeDir()
@@ -36,6 +45,10 @@ func GetUserHomeDir() string {
 }
 
 func GetDataHome() string {
+	if runtime.GOOS == "darwin" {
+		return GetUserHomeDir()
+	}
+
 	xdgDataHome := os.Getenv("XDG_DATA_HOME")
 	if xdgDataHome != "" {
 		return xdgDataHome
