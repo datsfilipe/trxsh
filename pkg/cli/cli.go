@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-    "time"
+	"time"
 
 	"github.com/datsfilipe/trxsh/pkg/register"
 )
@@ -36,9 +36,12 @@ func (c *CLI) Trash(args []string) error {
 	}
 
 	for _, file := range args {
-		if _, err := os.Stat(file); os.IsNotExist(err) {
+		file = filepath.Clean(file)
+		if _, err := os.Lstat(file); os.IsNotExist(err) {
 			fmt.Printf("File not found: %s\n", file)
 			continue
+		} else if err != nil {
+			return err
 		}
 
 		trashRoot := register.GetTrashRoot()
@@ -58,17 +61,19 @@ func (c *CLI) Trash(args []string) error {
 			return err
 		}
 
+		if err = moveFile(file, trashPath); err != nil {
+			return err
+		}
+
 		record, err := c.reg.Add(filepath.Base(file), encodedName, absPath)
 		if err != nil {
+			_ = moveFile(trashPath, file)
 			return err
 		}
 
-		err = c.SaveTrashInfo(record.ID, encodedName)
-		if err != nil {
-			return err
-		}
-
-		if err = moveFile(file, trashPath); err != nil {
+		if err = c.SaveTrashInfo(record.ID, encodedName); err != nil {
+			_ = c.reg.Remove(record.ID)
+			_ = moveFile(trashPath, file)
 			return err
 		}
 
@@ -171,7 +176,7 @@ func (c *CLI) Cleanup(days int) error {
 
 	cutoff := time.Now().AddDate(0, 0, -days)
 	records := c.reg.List()
-	
+
 	var idsToRemove []int
 
 	for _, record := range records {
@@ -184,7 +189,7 @@ func (c *CLI) Cleanup(days int) error {
 			fullPath := filepath.Join(trashDir, record.EncodedPath)
 			if err := os.RemoveAll(fullPath); err != nil && !os.IsNotExist(err) {
 				fmt.Fprintf(os.Stderr, "Failed to remove %s: %v\n", record.Name, err)
-				continue 
+				continue
 			}
 
 			if err := c.DeleteTrashInfo(record.ID, record.EncodedPath); err != nil && !os.IsNotExist(err) {
@@ -292,7 +297,7 @@ func (c *CLI) CalcDirSize(path string) error {
 			var folderName string
 			lines := strings.Split(string(content), "\n")
 			for _, line := range lines {
-                if _, ok := strings.CutPrefix(line, "Path="); ok {
+				if _, ok := strings.CutPrefix(line, "Path="); ok {
 					retrievedPath := strings.TrimPrefix(line, "Path=")
 					retrievedPath = strings.TrimSpace(retrievedPath)
 					folderName = filepath.Base(retrievedPath)
@@ -384,6 +389,8 @@ func (c *CLI) DeleteDirSize() {
 }
 
 func moveFile(src, dst string) error {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
 	err := os.Rename(src, dst)
 	if err == nil {
 		return nil

@@ -251,7 +251,7 @@ func GetDirSizeRoot() string {
 }
 
 func getFileCreationTime(filePath string) (time.Time, error) {
-	info, err := os.Stat(filePath)
+	info, err := os.Lstat(filePath)
 	if err != nil {
 		return time.Time{}, err
 	}
